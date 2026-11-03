@@ -1,6 +1,6 @@
-"""Export Pipeline: quad mesh, particle distance 15, Texture topstitches, FBX, PBR bakes, topstitch mask.
+"""Easy Export: quad mesh, particle distance 15, Texture topstitches, FBX, PBR bakes, topstitch mask.
 
-Run from Plugins > Export Pipeline > export_pipeline. Opens a tool window: paste the output folder,
+Run from Plugins > Easy Export > export_pipeline. Opens a tool window: paste the output folder,
 press Run. UVs must already be arranged in the UV editor (0-1 tile).
 """
 import importlib
@@ -24,7 +24,7 @@ importlib.reload(pipeline_lib.png_flatten)
 importlib.reload(pipeline_lib.steps)
 steps = pipeline_lib.steps
 
-TITLE = "Export Pipeline"
+TITLE = "Easy Export"
 SETTINGS_PATH = os.path.join(os.path.expanduser("~"), ".clo_export_pipeline.json")
 ui = {}
 

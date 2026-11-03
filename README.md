@@ -39,18 +39,18 @@ Output:
    {
      "m_AddingPositionIndex": 1,
      "m_BaseMenuTreeByObjectName": "Plugins",
-     "m_PlugInTitle": "Export Pipeline",
+     "m_PlugInTitle": "Easy Export",
      "m_SourcePath": "C:/path/to/clo-easy-export/plugin",
      "m_SourceType": "folder"
    }
    ```
 
-4. Start CLO. The plugin appears under **Plugins → Export Pipeline → export_pipeline**.
+4. Start CLO. The plugin appears under **Plugins → Easy Export → export_pipeline**.
 
 ## Usage
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) first.
-2. Open **Plugins → Export Pipeline → export_pipeline**.
+2. Open **Plugins → Easy Export → export_pipeline**.
 3. Fill in the window's fields:
    - The output folder.
    - A file name. Leave it empty to use the project name.
