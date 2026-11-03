@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.ruff_cache/
+
+# CLO artifacts
+*.zprj
+*.fbx
+*.png
