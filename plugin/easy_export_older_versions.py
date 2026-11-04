@@ -13,9 +13,10 @@ PLUGIN_DIR = r"C:\Users\Public\Documents\CLO\Plugins\clo-easy-export-main\plugin
 #
 # HOW TO USE
 #   1. Arrange the UVs in the UV Editor (0-1 tile) first.
-#   2. Edit OUTPUT_DIR (and optionally FILE_NAME / PARTICLE_DISTANCE) above.
-#   3. Run it: drag this file into the CLO 3D window, or open it in Edit > Python Script and run it.
-#   4. Check <OUTPUT_DIR>\<name>_export_log.txt (or the Python console) for the result.
+#   2. Drag this file into the CLO 3D window. CLO opens it in its own script editor.
+#   3. In that editor, edit OUTPUT_DIR (and optionally FILE_NAME / PARTICLE_DISTANCE) above.
+#   4. Run it from CLO's script editor.
+#   5. Check <OUTPUT_DIR>\<name>_export_log.txt (or the Python console) for the result.
 #
 # WARNING: this permanently changes the project's mesh type, particle distance and topstitch
 # settings. Save a copy of your project first.

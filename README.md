@@ -68,13 +68,14 @@ Output:
 CLO builds without the `gui_api` module (such as 2026.1.224) can't open the plugin window. Use `plugin/easy_export_older_versions.py` instead. It runs the same export steps, but you enter the settings in the file itself.
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) first.
-2. Open `plugin/easy_export_older_versions.py` in a text editor and edit the block at the top:
+2. Drag `plugin/easy_export_older_versions.py` into the CLO 3D window. CLO opens it in its own script editor.
+3. In CLO's script editor, edit the block at the top:
    - `OUTPUT_DIR`: the output folder, as an absolute path. It is created if it doesn't exist.
    - `FILE_NAME`: leave it empty to use the project name.
    - `PARTICLE_DISTANCE`: 10 or higher is recommended.
    - `PLUGIN_DIR`: the `plugin` folder of this repository. The default matches the ZIP download unpacked into the CLO `Plugins` folder.
-3. Drag the file into the CLO 3D window to run it.
-4. Check `<output folder>/<name>_export_log.txt` for the result. The script doesn't show a message when it finishes.
+4. Run the script from CLO's script editor.
+5. Check `<output folder>/<name>_export_log.txt` for the result. The script doesn't show a message when it finishes.
 
 Differences from the windowed version:
 
