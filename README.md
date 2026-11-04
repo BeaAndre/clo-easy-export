@@ -28,7 +28,7 @@ Output:
 
 - Windows.
 - CLO 3D with Python plug-in support:
-  - **CLO 2026.1.336 or newer:** use `export_pipeline`, which opens a window for the settings. It needs CLO's `gui_api` module, which older builds don't have.
+  - **CLO 2026.1.336 or newer:** use `easy_export`, which opens a window for the settings. It needs CLO's `gui_api` module, which older builds don't have.
   - **Older CLO builds** (tested on 2026.1.224): use `easy_export_older_versions`. See [Older CLO versions](#older-clo-versions).
 
 ## Installation
@@ -48,13 +48,13 @@ Output:
    ```
 
 4. Start CLO. The plugin appears under **Plugins → Easy Export**, with two entries:
-   - `export_pipeline` for CLO 2026.1.336 or newer.
+   - `easy_export` for CLO 2026.1.336 or newer.
    - `easy_export_older_versions` for older CLO builds.
 
 ## Usage
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) first.
-2. Open **Plugins → Easy Export → export_pipeline**.
+2. Open **Plugins → Easy Export → easy_export**.
 3. Fill in the window's fields:
    - The output folder.
    - A file name. Leave it empty to use the project name.

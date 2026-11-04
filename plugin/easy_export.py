@@ -1,6 +1,6 @@
 """Easy Export: quad mesh, particle distance 15, Texture topstitches, FBX, PBR bakes, topstitch mask.
 
-Run from Plugins > Easy Export > export_pipeline. Opens a tool window: paste the output folder,
+Run from Plugins > Easy Export > easy_export. Opens a tool window: paste the output folder,
 press Run. UVs must already be arranged in the UV editor (0-1 tile).
 """
 import importlib

@@ -8,7 +8,7 @@ PLUGIN_DIR = r"C:\Users\Public\Documents\CLO\Plugins\clo-easy-export-main\plugin
 
 # Easy Export - NO-GUI version, for CLO builds without the gui_api module (e.g. 2026.1.224).
 #
-# Same pipeline as export_pipeline.py (quad mesh, particle distance, Texture topstitches, FBX,
+# Same pipeline as easy_export.py (quad mesh, particle distance, Texture topstitches, FBX,
 # PBR bakes, topstitch mask), but the settings are the plain variables above instead of a window.
 #
 # HOW TO USE
