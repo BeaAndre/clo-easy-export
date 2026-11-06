@@ -12,6 +12,8 @@ It can also export an entire folder of projects with the same settings (batch).
 5. Bakes **Diffuse, Normal and Roughness** maps (4096 px).
 6. Bakes an opaque **topstitch mask** (white stitches on black). The original colours are restored automatically afterwards.
 
+Optionally, it can also pack the UVs into the 0–1 tile first. See [Auto-UV](#auto-uv).
+
 Output:
 
 ```
@@ -29,8 +31,8 @@ Output:
 
 - Windows
 - CLO 3D with Python plug-in support:
-  - **CLO 2026.1.336 or newer:** use `single`, or `batch` (for a whole folder). Both open a settings window. They need CLO's `gui_api` module, which older builds don't have.
-  - **Older CLO builds** (tested on 2026.1.224): use `single_older`, or `batch_older` (for a whole folder). See [Older CLO versions](#older-clo-versions).
+  - **CLO 2026.1.336 or newer:** use `1_single`, or `2_batch` (for a whole folder). Both open a settings window. They need CLO's `gui_api` module, which older builds don't have.
+  - **Older CLO builds** (tested on 2026.1.224): use `3_older_single`, or `4_older_batch` (for a whole folder). See [Older CLO versions](#older-clo-versions).
 
 ## Installation
 
@@ -49,34 +51,36 @@ Output:
    ```
 
 4. Start CLO. The plugin appears under **Plugins → Easy Export**, with four entries:
-   - `single` for one project.
-   - `batch` for a folder of projects.
-   - `single_older` for one project, on CLO builds older than 2026.1.336.
-   - `batch_older` for a folder of projects, on CLO builds older than 2026.1.336.
+   - `1_single` for one project.
+   - `2_batch` for a folder of projects.
+   - `3_older_single` for one project, on CLO builds older than 2026.1.336.
+   - `4_older_batch` for a folder of projects, on CLO builds older than 2026.1.336.
 
 ## Single file export
 
-1. **Arrange the UVs in the UV Editor** (0–1 tile) first.
-2. Open **Plugins → Easy Export → single**.
+1. **Arrange the UVs in the UV Editor** (0–1 tile) first, or use [Auto-UV](#auto-uv).
+2. Open **Plugins → Easy Export → 1_single**.
 3. Fill in the window's fields:
    - The output folder.
    - A file name. Leave it empty to use the project name.
    - A particle distance. 10 or higher is recommended.
+   - **Auto-UV to 0-1 before exporting**, if you want it. See [Auto-UV](#auto-uv).
 4. Press **Run**, check the summary and press **Continue**. Wait until the plugin finishes.
 
 > **Note:** Steps 1–3 permanently change the project's mesh type, particle distance and topstitch settings. Save a copy of your project first if you want to keep the original.
 
 ## Batch export
 
-`batch` runs the same export on every `.zprj` file in a folder, using one set of settings. Subfolders aren't searched.
+`2_batch` runs the same export on every `.zprj` file in a folder, using one set of settings. Subfolders aren't searched.
 
-1. **Arrange the UVs in the UV Editor** (0–1 tile) in every project and save them. The batch can't stop to fix them.
+1. **Arrange the UVs in the UV Editor** (0–1 tile) in every project and save them, or use [Auto-UV](#auto-uv). The batch can't stop to fix them.
 2. Save the project that's open in CLO. The batch will close it without saving.
-3. Open **Plugins → Easy Export → batch**.
+3. Open **Plugins → Easy Export → 2_batch**.
 4. Fill in the window's fields:
    - The input folder with your `.zprj` files.
    - The output folder.
    - A particle distance. 10 or higher is recommended.
+   - **Auto-UV to 0-1 before exporting**, if you want it. See [Auto-UV](#auto-uv).
 5. Press **Run**, check the summary and press **Continue**. Wait until the batch finishes. It can't be stopped from the window.
 
 Each project is exported to its own subfolder, named after the `.zprj` file:
@@ -92,19 +96,37 @@ Each project is exported to its own subfolder, named after the `.zprj` file:
 ```
 
 - **Your project files:** the `.zprj` files are never saved, so the changes made for the export don't stay in them.
-- **After the batch:** CLO is left with a new, empty project. If every project was skipped, the open project stays as it was.
+- **After the batch:** the last project stays open, with the export changes in it. Don't save it, or those changes go into its `.zprj`. If every project was skipped, the project you had open stays as it was.
 - **The project you have open:** the batch always exports the saved `.zprj` files, so unsaved changes aren't included, even if that project is in the input folder.
 - **Failed projects:** if a project fails, the batch logs the error and continues with the next one. The final summary lists any failures.
 - **Running it again:** projects that are already fully exported are skipped, so a rerun only does what's missing. To export a project again, for example with a new particle distance, delete its subfolder first.
 
+## Auto-UV
+
+`1_single` and `2_batch` have an **Auto-UV to 0-1 before exporting** checkbox. It's off by default, and the window remembers your last choice.
+
+When it's on, the plugin checks whether every pattern fits inside the 0–1 tile:
+
+- If they all fit, your UVs are left as they are.
+- If any pattern is outside, the UVs are reset to the 2D arrangement, then all patterns are packed with CLO's UV packing, using a padding of 0.01 and **Fix Scale Ratio** on. That replaces the whole UV layout, and the export fails if something still doesn't fit.
+
+Good to know:
+
+- **Buttons, zippers and trims:** the check can't see them. If only a button is outside the tile, nothing gets packed, so check those yourself.
+- **Overlaps:** the check only looks at the tile's edges. Overlapping patterns inside 0–1 aren't detected.
+- **Hand-scaled UVs:** the reset undoes any scaling you did in the UV editor, so every pattern goes back to its true proportions. If you made a pattern bigger on purpose for more texture detail, arrange the UVs yourself and leave Auto-UV off.
+- **Your project:** in `1_single`, the new UV layout stays in the open project, so it's kept if you save. `2_batch` never saves the `.zprj` files.
+
+Auto-UV isn't available in `3_older_single` and `4_older_batch` yet.
+
 ## Older CLO versions
 
-CLO builds without the `gui_api` module (such as 2026.1.224) can't open the plugin window. Use `plugin/single_older.py` or `plugin/batch_older.py` instead. They run the same export steps, but you enter the settings in the file itself.
+CLO builds without the `gui_api` module (such as 2026.1.224) can't open the plugin window. Use `plugin/3_older_single.py` or `plugin/4_older_batch.py` instead. They run the same export steps, but you enter the settings in the file itself.
 
 ### Single file export on older versions
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) first.
-2. Drag `plugin/single_older.py` into the CLO 3D window. CLO opens it in its own script editor.
+2. Drag `plugin/3_older_single.py` into the CLO 3D window. CLO opens it in its own script editor.
 3. In CLO's script editor, edit the block at the top:
    - `OUTPUT_DIR`: the output folder, as an absolute path. It is created if it doesn't exist.
    - `FILE_NAME`: leave it empty to use the project name.
@@ -115,11 +137,11 @@ CLO builds without the `gui_api` module (such as 2026.1.224) can't open the plug
 
 ### Batch export on older versions
 
-> **Note:** `batch_older` hasn't been tested on an older CLO build yet.
+> **Note:** `4_older_batch` hasn't been tested on an older CLO build yet.
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) in every project and save them. The batch can't stop to fix them.
 2. Save the project that's open in CLO. The batch will close it without saving, and there is no warning.
-3. Drag `plugin/batch_older.py` into the CLO 3D window. CLO opens it in its own script editor.
+3. Drag `plugin/4_older_batch.py` into the CLO 3D window. CLO opens it in its own script editor.
 4. In CLO's script editor, edit the block at the top:
    - `INPUT_DIR`: the folder with your `.zprj` files, as an absolute path.
    - `OUTPUT_DIR`: the output folder, as an absolute path. It is created if it doesn't exist.
@@ -132,7 +154,7 @@ The output folders, skipped projects and failure handling work the same as in [B
 
 ### Differences from the windowed versions
 
-- `single_older` overwrites existing files in the output folder without asking.
+- `3_older_single` overwrites existing files in the output folder without asking.
 - There is no progress bar or confirmation dialog. Progress is printed to CLO's Python console.
 - Every run is also added to `C:\Users\Public\clo_easy_export_run.txt`, which helps when the output folder itself is the problem.
 

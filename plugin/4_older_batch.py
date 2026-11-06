@@ -8,7 +8,7 @@ PLUGIN_DIR = r"C:\Users\Public\Documents\CLO\Plugins\clo-easy-export-main\plugin
 
 # Easy Export Batch - NO-GUI version, for CLO builds without the gui_api module (e.g. 2026.1.224).
 #
-# Same batch as batch.py: exports every .zprj directly inside INPUT_DIR to its own subfolder of
+# Same batch as 2_batch.py: exports every .zprj directly inside INPUT_DIR to its own subfolder of
 # OUTPUT_DIR, named after the .zprj file. The settings are the plain variables above instead of a window.
 #
 # HOW TO USE
@@ -19,7 +19,8 @@ PLUGIN_DIR = r"C:\Users\Public\Documents\CLO\Plugins\clo-easy-export-main\plugin
 #   5. Run it from CLO's script editor. There is no way to stop it once it has started.
 #   6. Check <OUTPUT_DIR>\batch_export_log.txt (or the Python console) for the result.
 #
-# The .zprj files are never saved. Projects that are already fully exported are skipped: to export
+# The .zprj files are never saved. The last project stays open with the export changes, so don't save it
+# or they go into its .zprj. Projects that are already fully exported are skipped: to export
 # one again, delete its subfolder first.
 
 import importlib

@@ -21,6 +21,13 @@ MATERIAL_FACES = (0, 1, 2)   # Front, Back, Side
 STITCH_LINES = range(4)      # GetTopStitchColor works for lines 0-3 regardless of the real line count
 UDIM_SUFFIX = "_1001"
 TEXTURES_FOLDER = "textures"
+UV_TILE_SIZE = 1000.0         # GetPatternUVSpace measures the 0-1 tile as 0-1000
+UV_EDGE_TOLERANCE = 0.05
+UV_PADDING = 0.01             # same value as in CLO's UV Packing window
+UV_FIX_SCALE_RATIO = True     # all patterns scale by one factor, keeping texture detail even
+UV_ADVANCED_SEARCH = False
+UV_FIDELITY = 3
+UV_ROTATIONS = [0]
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEV_SETTINGS_PATH = os.path.join(_REPO_ROOT, "dev_settings.json")
@@ -113,6 +120,39 @@ def set_topstitches_texture():
     if failed:
         raise PipelineError("could not set topstitch styles to Texture: %s" % failed)
     return "%d topstitch styles set to Texture" % n
+
+
+# --------------------------------------------------------------------------------- optional UV step
+def _pattern_outside_uv_tile(i):
+    data = json.loads(pattern_api.GetPatternUVSpace(i))
+    if data.get("status") != "success":
+        raise PipelineError("could not read the UVs of pattern %d: %s" % (i, data.get("message")))
+    box = data["bbox"]
+    low, high = -UV_EDGE_TOLERANCE, UV_TILE_SIZE + UV_EDGE_TOLERANCE
+    return (box["x"] < low or box["y"] < low
+            or box["x"] + box["width"] > high or box["y"] + box["height"] > high)
+
+
+def patterns_outside_uv_tile():
+    """Pattern indices not fully inside the 0-1 tile. Buttons, zippers and trims can't be read through the API."""
+    return [i for i in range(pattern_api.GetPatternCount()) if _pattern_outside_uv_tile(i)]
+
+
+def fit_uvs_to_tile():
+    """If any pattern is outside the 0-1 tile, reset the UVs to the 2D arrangement and pack them all into it.
+    The reset undoes scaling done in the UV editor, so one oversized island can't shrink the others.
+    If everything fits, the UVs are left alone."""
+    outside = patterns_outside_uv_tile()
+    if not outside:
+        return "all patterns inside 0-1, UVs left as they are"
+    utility_api.ResetUVTo2DArrangement()
+    packed = utility_api.UVPacking(True, UV_FIX_SCALE_RATIO, UV_ADVANCED_SEARCH, UV_PADDING, UV_FIDELITY, UV_ROTATIONS)
+    if not packed:
+        raise PipelineError("CLO could not pack the UVs")
+    still_outside = patterns_outside_uv_tile()
+    if still_outside:
+        raise PipelineError("patterns %s are still outside 0-1 after packing" % still_outside)
+    return "%d of %d patterns were outside 0-1, all UVs reset and packed" % (len(outside), pattern_api.GetPatternCount())
 
 
 # -------------------------------------------------------------------------------------- step 4
@@ -264,8 +304,9 @@ def bake_topstitch_mask(tex_dir, name):
 
 
 # ---------------------------------------------------------------------------------- whole export
-def run_pipeline(out_dir, name, distance, log, progress=lambda pct: None):
+def run_pipeline(out_dir, name, distance, log, progress=lambda pct: None, auto_uv=False):
     """Run steps 1-6 on the open project. log(msg) gets one line per step, progress(pct) gets 0-100.
+    With auto_uv, UVs that don't fit the 0-1 tile are packed before the FBX export.
     Failures raise: the calling script decides how to report them."""
     tex_dir = os.path.join(out_dir, TEXTURES_FOLDER)
     os.makedirs(tex_dir, exist_ok=True)
@@ -277,6 +318,8 @@ def run_pipeline(out_dir, name, distance, log, progress=lambda pct: None):
     progress(15)
     log("3/6 " + set_topstitches_texture())
     progress(22)
+    if auto_uv:
+        log("    Auto-UV: " + fit_uvs_to_tile())
     log("4/6 FBX: " + export_fbx(out_dir, name))
     progress(40)
     for p in bake_pbr(tex_dir, name):

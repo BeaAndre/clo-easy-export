@@ -9,6 +9,9 @@ from . import steps
 TITLE = "Easy Export"
 SETTINGS_PATH = os.path.join(os.path.expanduser("~"), ".clo_export_pipeline.json")
 UV_WARNING = "IMPORTANT: Arrange UVs in the UV Editor (0-1 tile) before running."
+UV_WINDOW_NOTE = "IMPORTANT: Arrange UVs in the UV Editor (0-1 tile) before running, or tick Auto-UV."
+AUTO_UV_LABEL = "Auto-UV to 0-1 before exporting"
+AUTO_UV_NOTICE = "Auto-UV is on: if any pattern is outside 0-1, all UVs are reset and packed into 0-1 before exporting."
 DISTANCE_LABEL = "Particle distance (recommended: higher than %g)" % steps.RECOMMENDED_MIN_DISTANCE
 
 
@@ -36,6 +39,14 @@ def saved_particle_distance(settings):
     if not isinstance(saved, (int, float)) or saved <= 0:
         return steps.PARTICLE_DISTANCE
     return saved
+
+
+def saved_auto_uv(settings):
+    return settings.get("auto_uv") is True
+
+
+def is_checked(widget):
+    return str(gui_api.GetWidgetValue(widget)).strip().lower() == "true"
 
 
 def window_log(widget):

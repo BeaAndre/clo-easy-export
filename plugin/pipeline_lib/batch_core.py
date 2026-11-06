@@ -1,11 +1,10 @@
-"""Batch logic shared by batch.py and batch_older.py. Must not import gui_api: older CLO builds don't have it."""
+"""Batch logic shared by 2_batch.py and 4_older_batch.py. Must not import gui_api: older CLO builds don't have it."""
 import os
 import time
 import traceback
 
 import ApiTypes
 import import_api
-import utility_api
 
 from . import steps
 
@@ -44,12 +43,11 @@ def open_project(path):
         raise steps.PipelineError("could not open %s" % path)
 
 
-def run_batch(projects, in_dir, out_dir, distance, log, progress=lambda pct: None):
+def run_batch(projects, in_dir, out_dir, distance, log, progress=lambda pct: None, auto_uv=False):
     """Export each project with a steps.RunLog as log. One failure doesn't stop the others.
     Returns (exported, failed, skipped) name lists."""
     t0 = time.time()
     exported, failed, skipped = [], [], []
-    opened_any = False
     batch_log = os.path.join(out_dir, BATCH_LOG_NAME)
     log("Batch: %d projects from %s -> %s" % (len(projects), in_dir, out_dir))
     try:
@@ -66,9 +64,8 @@ def run_batch(projects, in_dir, out_dir, distance, log, progress=lambda pct: Non
                 project_dir = os.path.join(out_dir, name)
                 try:
                     open_project(path)
-                    opened_any = True
                     os.makedirs(project_dir, exist_ok=True)
-                    steps.run_pipeline(project_dir, name, distance, log, file_progress)
+                    steps.run_pipeline(project_dir, name, distance, log, file_progress, auto_uv)
                     exported.append(name)
                 except Exception as e:  # noqa: BLE001
                     log("FAILED: %s" % e)
@@ -80,10 +77,6 @@ def run_batch(projects, in_dir, out_dir, distance, log, progress=lambda pct: Non
             log.save(batch_log)  # after every project, so a crash still leaves a log
         log("Batch finished in %.1fs: %s" % (time.time() - t0, summary(exported, failed, skipped)))
     finally:
-        if opened_any:
-            # The last project has changes that shouldn't be saved over its .zprj by accident.
-            # If nothing was opened, the user's own project is still open: leave it alone.
-            utility_api.NewProject()
         log.save(batch_log)
     return exported, failed, skipped
 
@@ -92,4 +85,6 @@ def summary(exported, failed, skipped):
     text = "%d exported, %d failed, %d skipped" % (len(exported), len(failed), len(skipped))
     if failed:
         text += "\n\nFailed:\n" + "\n".join(failed)
+    if exported:
+        text += "\n\nThe last project is still open with the export changes. Don't save it, or they go into its .zprj."
     return text

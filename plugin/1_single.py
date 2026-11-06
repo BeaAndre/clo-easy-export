@@ -1,6 +1,6 @@
 """Easy Export: quad mesh, particle distance 15, Texture topstitches, FBX, PBR bakes, topstitch mask.
 
-Run from Plugins > Easy Export > single. Opens a tool window: paste the output folder,
+Run from Plugins > Easy Export > 1_single. Opens a tool window: paste the output folder,
 press Run. UVs must already be arranged in the UV editor (0-1 tile).
 """
 import importlib
@@ -26,6 +26,7 @@ steps = pipeline_lib.steps
 common = pipeline_lib.gui_common
 
 TITLE = common.TITLE
+PACKING_CHANGES_PROJECT = " This replaces the project's UV layout."
 ui = {}
 
 
@@ -43,10 +44,12 @@ def on_run():
     name_input = gui_api.GetWidgetValue(ui["name"])
     name = steps.base_name(name_input)
     size = steps.texture_size()
+    auto_uv = common.is_checked(ui["auto_uv"])
     existing = [p for p in steps.output_files(out_dir, name) if os.path.exists(p)]
     msg = ("%s\n\nExport '%s' to:\n%s\n\nThis permanently sets all patterns to quads, particle distance to %g and "
            "topstitches to Texture.\nTexture size: %d px%s"
-           % (common.UV_WARNING, name, out_dir, distance, size,
+           % (common.AUTO_UV_NOTICE + PACKING_CHANGES_PROJECT if auto_uv else common.UV_WARNING,
+              name, out_dir, distance, size,
               "  (DEV OVERRIDE from dev_settings.json)" if size != steps.TEXTURE_SIZE else ""))
     if distance < steps.RECOMMENDED_MIN_DISTANCE:
         msg += "\n\nWARNING: particle distance below %g can cause performance issues." % steps.RECOMMENDED_MIN_DISTANCE
@@ -56,13 +59,13 @@ def on_run():
     if not gui_api.AskConfirm(TITLE, msg, "Continue", "Cancel"):
         return
 
-    common.save_settings(output_dir=out_dir, particle_distance=distance)
+    common.save_settings(output_dir=out_dir, particle_distance=distance, auto_uv=auto_uv)
     log = common.window_log(ui["log"])
     gui_api.SetWidgetEnabled(ui["run"], False)
     progress(0)
     ok = False
     try:
-        steps.run_pipeline(out_dir, name, distance, log, progress)
+        steps.run_pipeline(out_dir, name, distance, log, progress, auto_uv)
         ok = True
     except Exception as e:  # noqa: BLE001
         log("FAILED: %s" % e)
@@ -78,7 +81,7 @@ def build_ui():
     settings = common.load_settings()
     project_name = steps.base_name()
     win = gui_api.CreateToolWindow(TITLE, 560, 520)
-    gui_api.AddLabel(win, common.UV_WARNING)
+    gui_api.AddLabel(win, common.UV_WINDOW_NOTE)
     gui_api.AddLabel(win, "Output folder (paste a path):")
     ui["path"] = gui_api.AddTextInput(win, settings.get("output_dir", ""), "D:\\exports\\my_garment")
     gui_api.AddLabel(win, "File name (leave empty to use the project name):")
@@ -86,6 +89,7 @@ def build_ui():
     gui_api.AddLabel(win, common.DISTANCE_LABEL)
     saved = common.saved_particle_distance(settings)
     ui["distance"] = gui_api.AddTextInput(win, "%g" % saved, "%g" % steps.PARTICLE_DISTANCE)
+    ui["auto_uv"] = gui_api.AddCheckBox(win, common.AUTO_UV_LABEL, common.saved_auto_uv(settings))
     ui["run"] = gui_api.AddButton(win, "Run", on_run)
     ui["progress"] = gui_api.AddProgressBar(win, 0)
     ui["log"] = gui_api.AddTextArea(win, "", True)

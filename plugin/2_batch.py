@@ -1,6 +1,6 @@
 """Easy Export Batch: run the Easy Export steps on every .zprj in a folder.
 
-Run from Plugins > Easy Export > batch. Each project is exported to its own subfolder of
+Run from Plugins > Easy Export > 2_batch. Each project is exported to its own subfolder of
 the output folder, named after the .zprj file. The .zprj files are never saved, so they stay unchanged.
 UVs must already be arranged in the UV editor (0-1 tile) in every project.
 """
@@ -45,12 +45,14 @@ def validate_input_dir(raw):
     return folder
 
 
-def confirm_run(projects, in_dir, out_dir, distance):
+def confirm_run(projects, in_dir, out_dir, distance, auto_uv):
     skipping = sum(core.is_exported(out_dir, name) for name in projects)
-    msg = ("%s\nEvery project must be ready: the batch can't stop to fix UVs.\n\nExport %d projects from:\n%s\n\nto "
-           "one subfolder each in:\n%s\n\nEach export uses quads, particle distance %g and Texture topstitches.\n"
+    uv_text = (common.AUTO_UV_NOTICE if auto_uv
+               else common.UV_WARNING + "\nEvery project must be ready: the batch can't stop to fix UVs.")
+    msg = ("%s\n\nExport %d projects from:\n%s\n\nto one subfolder each in:\n%s\n\n"
+           "Each export uses quads, particle distance %g and Texture topstitches.\n"
            "Texture size: %d px. The .zprj files are not saved."
-           % (common.UV_WARNING, len(projects), in_dir, out_dir, distance, steps.texture_size()))
+           % (uv_text, len(projects), in_dir, out_dir, distance, steps.texture_size()))
     if distance < steps.RECOMMENDED_MIN_DISTANCE:
         msg += "\n\nWARNING: particle distance below %g can cause performance issues." % steps.RECOMMENDED_MIN_DISTANCE
     if skipping:
@@ -80,15 +82,16 @@ def on_run():
     distance = common.validate_particle_distance(gui_api.GetWidgetValue(ui["distance"]))
     if distance is None:
         return
-    if not confirm_run(projects, in_dir, out_dir, distance):
+    auto_uv = common.is_checked(ui["auto_uv"])
+    if not confirm_run(projects, in_dir, out_dir, distance, auto_uv):
         return
 
-    common.save_settings(input_dir=in_dir, output_dir=out_dir, particle_distance=distance)
+    common.save_settings(input_dir=in_dir, output_dir=out_dir, particle_distance=distance, auto_uv=auto_uv)
     log = common.window_log(ui["log"])
     gui_api.SetWidgetEnabled(ui["run"], False)
     progress(0)
     try:
-        result = core.summary(*core.run_batch(projects, in_dir, out_dir, distance, log, progress))
+        result = core.summary(*core.run_batch(projects, in_dir, out_dir, distance, log, progress, auto_uv))
     except Exception as e:  # noqa: BLE001
         result = "Batch stopped: %s" % e
         log("FAILED: %s" % e)
@@ -102,7 +105,7 @@ def on_run():
 def build_ui():
     settings = common.load_settings()
     win = gui_api.CreateToolWindow(TITLE, 560, 520)
-    gui_api.AddLabel(win, common.UV_WARNING)
+    gui_api.AddLabel(win, common.UV_WINDOW_NOTE)
     gui_api.AddLabel(win, "Folder with .zprj files (paste a path):")
     ui["input"] = gui_api.AddTextInput(win, settings.get("input_dir", ""), "D:\\clo_projects\\collection")
     gui_api.AddLabel(win, "Output folder (paste a path), each project gets a subfolder:")
@@ -110,6 +113,7 @@ def build_ui():
     gui_api.AddLabel(win, common.DISTANCE_LABEL)
     saved = common.saved_particle_distance(settings)
     ui["distance"] = gui_api.AddTextInput(win, "%g" % saved, "%g" % steps.PARTICLE_DISTANCE)
+    ui["auto_uv"] = gui_api.AddCheckBox(win, common.AUTO_UV_LABEL, common.saved_auto_uv(settings))
     ui["run"] = gui_api.AddButton(win, "Run", on_run)
     ui["progress"] = gui_api.AddProgressBar(win, 0)
     ui["log"] = gui_api.AddTextArea(win, "", True)
