@@ -9,8 +9,7 @@ from . import steps
 TITLE = "Easy Export"
 SETTINGS_PATH = os.path.join(os.path.expanduser("~"), ".clo_export_pipeline.json")
 UV_WARNING = "IMPORTANT: Arrange UVs in the UV Editor (0-1 tile) before running."
-DISTANCE_LABEL = ("Particle distance (default %g, shows your last used value). Under %g can cause "
-                  "performance issues:" % (steps.PARTICLE_DISTANCE, steps.RECOMMENDED_MIN_DISTANCE))
+DISTANCE_LABEL = "Particle distance (recommended: higher than %g)" % steps.RECOMMENDED_MIN_DISTANCE
 
 
 def load_settings():

@@ -115,6 +115,8 @@ CLO builds without the `gui_api` module (such as 2026.1.224) can't open the plug
 
 ### Batch export on older versions
 
+> **Note:** `batch_older` hasn't been tested on an older CLO build yet.
+
 1. **Arrange the UVs in the UV Editor** (0–1 tile) in every project and save them. The batch can't stop to fix them.
 2. Save the project that's open in CLO. The batch will close it without saving, and there is no warning.
 3. Drag `plugin/batch_older.py` into the CLO 3D window. CLO opens it in its own script editor.
