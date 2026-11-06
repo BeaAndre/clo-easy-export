@@ -28,7 +28,6 @@ import time
 import traceback
 
 PLACEHOLDER_DIR = r"D:\exports\my_garment"
-RECOMMENDED_MIN_DISTANCE = 10.0
 EMERGENCY_LOG = r"C:\Users\Public\clo_easy_export_run.txt"
 
 lines = []
@@ -78,34 +77,16 @@ def run():
     distance = float(PARTICLE_DISTANCE)
     if distance <= 0:
         raise RuntimeError("PARTICLE_DISTANCE must be greater than 0.")
-    if distance < RECOMMENDED_MIN_DISTANCE:
-        log("WARNING: particle distance below %g can cause performance issues." % RECOMMENDED_MIN_DISTANCE)
+    if distance < steps.RECOMMENDED_MIN_DISTANCE:
+        log("WARNING: particle distance below %g can cause performance issues." % steps.RECOMMENDED_MIN_DISTANCE)
 
     os.makedirs(out_dir, exist_ok=True)
     name = steps.base_name(FILE_NAME)
-    tex_dir = os.path.join(out_dir, "textures")
-    os.makedirs(tex_dir, exist_ok=True)
-    size = steps.texture_size()
 
     ok = False
-    t0 = time.time()
     try:
-        log("Export '%s' -> %s (texture size %d, particle distance %g)" % (name, out_dir, size, distance))
-        log("1/6 " + steps.set_quad_mesh())
-        log("2/6 " + steps.set_particle_distance(distance))
-        log("3/6 " + steps.set_topstitches_texture())
-        log("4/6 FBX: " + steps.export_fbx(out_dir, name))
-        for p in steps.bake_pbr(tex_dir, name):
-            log("5/6 baked " + os.path.basename(p))
-        backup, warning = steps.backup_colours(name)
-        log("    original colours saved to: " + backup)
-        if warning:
-            log("    WARNING: " + warning)
-        final, method, n_faces, n_lines = steps.bake_topstitch_mask(tex_dir, name)
-        log("6/6 baked %s (flattened via %s); %d fabric faces + %d stitch lines restored and verified"
-            % (os.path.basename(final), method, n_faces, n_lines))
+        steps.run_pipeline(out_dir, name, distance, log)
         ok = True
-        log("Done in %.1fs" % (time.time() - t0))
     except Exception:  # noqa: BLE001
         log("FAILED:\n" + traceback.format_exc())
     finally:

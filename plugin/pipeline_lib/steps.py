@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import time
 
 import ApiTypes
 import export_api
@@ -13,11 +14,13 @@ from . import png_flatten
 
 MESH_TYPE = "Quad"
 PARTICLE_DISTANCE = 15.0
+RECOMMENDED_MIN_DISTANCE = 10.0
 TOPSTITCH_MODEL_TEXTURE = 1  # 0 = OBJ, 1 = Texture
 TEXTURE_SIZE = 4096          # release value; dev_settings.json may override for testing
 MATERIAL_FACES = (0, 1, 2)   # Front, Back, Side
 STITCH_LINES = range(4)      # GetTopStitchColor works for lines 0-3 regardless of the real line count
 UDIM_SUFFIX = "_1001"
+TEXTURES_FOLDER = "textures"
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEV_SETTINGS_PATH = os.path.join(_REPO_ROOT, "dev_settings.json")
@@ -46,6 +49,13 @@ def sanitize_name(raw):
 def base_name(override=""):
     """User-given file name if set, else the project name, else 'garment'."""
     return sanitize_name(override) or sanitize_name(utility_api.GetProjectName()) or "garment"
+
+
+def output_files(out_dir, name):
+    """Every file an export writes, apart from the log."""
+    tex_dir = os.path.join(out_dir, TEXTURES_FOLDER)
+    return [os.path.join(out_dir, name + ".fbx")] + [
+        os.path.join(tex_dir, "%s_%s.png" % (name, m)) for m in ("diffuse", "normal", "roughness", "topstitch")]
 
 
 def current_colorway():
@@ -228,3 +238,33 @@ def bake_topstitch_mask(tex_dir, name):
     method = png_flatten.flatten_png(raw, final, (0, 0, 0))
     os.remove(raw)
     return final, method, len(fabrics), len(stitches)
+
+
+# ---------------------------------------------------------------------------------- whole export
+def run_pipeline(out_dir, name, distance, log, progress=lambda pct: None):
+    """Run steps 1-6 on the open project. log(msg) gets one line per step, progress(pct) gets 0-100.
+    Failures raise: the calling script decides how to report them."""
+    tex_dir = os.path.join(out_dir, TEXTURES_FOLDER)
+    os.makedirs(tex_dir, exist_ok=True)
+    t0 = time.time()
+    log("Export '%s' -> %s (texture size %d, particle distance %g)" % (name, out_dir, texture_size(), distance))
+    log("1/6 " + set_quad_mesh())
+    progress(8)
+    log("2/6 " + set_particle_distance(distance))
+    progress(15)
+    log("3/6 " + set_topstitches_texture())
+    progress(22)
+    log("4/6 FBX: " + export_fbx(out_dir, name))
+    progress(40)
+    for p in bake_pbr(tex_dir, name):
+        log("5/6 baked " + os.path.basename(p))
+    progress(70)
+    backup, warning = backup_colours(name)
+    log("    original colours saved to: " + backup)
+    if warning:
+        log("    WARNING: " + warning)
+    final, method, n_faces, n_lines = bake_topstitch_mask(tex_dir, name)
+    log("6/6 baked %s (flattened via %s); %d fabric faces + %d stitch lines restored and verified"
+        % (os.path.basename(final), method, n_faces, n_lines))
+    progress(100)
+    log("Done in %.1fs" % (time.time() - t0))
