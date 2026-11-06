@@ -1,6 +1,6 @@
 """Easy Export Batch: run the Easy Export steps on every .zprj in a folder.
 
-Run from Plugins > Easy Export > easy_export_batch. Each project is exported to its own subfolder of
+Run from Plugins > Easy Export > batch. Each project is exported to its own subfolder of
 the output folder, named after the .zprj file. The .zprj files are never saved, so they stay unchanged.
 UVs must already be arranged in the UV editor (0-1 tile) in every project.
 """
@@ -186,8 +186,7 @@ def build_ui():
     ui["input"] = gui_api.AddTextInput(win, settings.get("input_dir", ""), "D:\\clo_projects\\collection")
     gui_api.AddLabel(win, "Output folder (paste a path), each project gets a subfolder:")
     ui["output"] = gui_api.AddTextInput(win, settings.get("output_dir", ""), "D:\\exports\\collection")
-    gui_api.AddLabel(win, "Particle distance (values under %g can cause performance issues):"
-                     % steps.RECOMMENDED_MIN_DISTANCE)
+    gui_api.AddLabel(win, common.DISTANCE_LABEL)
     saved = common.saved_particle_distance(settings)
     ui["distance"] = gui_api.AddTextInput(win, "%g" % saved, "%g" % steps.PARTICLE_DISTANCE)
     ui["run"] = gui_api.AddButton(win, "Run", on_run)

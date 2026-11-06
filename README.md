@@ -28,8 +28,8 @@ Output:
 
 - Windows.
 - CLO 3D with Python plug-in support:
-  - **CLO 2026.1.336 or newer:** use `easy_export`, or `easy_export_batch` for a whole folder. Both open a window for the settings. They need CLO's `gui_api` module, which older builds don't have.
-  - **Older CLO builds** (tested on 2026.1.224): use `easy_export_older_versions`. See [Older CLO versions](#older-clo-versions). Batch export isn't available for these builds.
+  - **CLO 2026.1.336 or newer:** use `single`, or `batch` for a whole folder. Both open a window for the settings. They need CLO's `gui_api` module, which older builds don't have.
+  - **Older CLO builds** (tested on 2026.1.224): use `single_older`. See [Older CLO versions](#older-clo-versions). Batch export isn't available for these builds.
 
 ## Installation
 
@@ -48,14 +48,14 @@ Output:
    ```
 
 4. Start CLO. The plugin appears under **Plugins → Easy Export**, with three entries:
-   - `easy_export` for one project, on CLO 2026.1.336 or newer.
-   - `easy_export_batch` for a folder of projects, on CLO 2026.1.336 or newer.
-   - `easy_export_older_versions` for older CLO builds.
+   - `single` for one project, on CLO 2026.1.336 or newer.
+   - `batch` for a folder of projects, on CLO 2026.1.336 or newer.
+   - `single_older` for older CLO builds.
 
 ## Usage
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) first.
-2. Open **Plugins → Easy Export → easy_export**.
+2. Open **Plugins → Easy Export → single**.
 3. Fill in the window's fields:
    - The output folder.
    - A file name. Leave it empty to use the project name.
@@ -66,11 +66,11 @@ Output:
 
 ## Batch export
 
-`easy_export_batch` runs the same export on every `.zprj` file in a folder, using one set of settings. Subfolders aren't searched.
+`batch` runs the same export on every `.zprj` file in a folder, using one set of settings. Subfolders aren't searched.
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) in every project and save them. The batch can't stop to fix them.
 2. Save the project that's open in CLO. The batch closes it without saving.
-3. Open **Plugins → Easy Export → easy_export_batch**.
+3. Open **Plugins → Easy Export → batch**.
 4. Fill in the window's fields:
    - The folder with your `.zprj` files.
    - The output folder.
@@ -96,10 +96,10 @@ Each project is exported to its own subfolder, named after the `.zprj` file:
 
 ## Older CLO versions
 
-CLO builds without the `gui_api` module (such as 2026.1.224) can't open the plugin window. Use `plugin/easy_export_older_versions.py` instead. It runs the same export steps, but you enter the settings in the file itself.
+CLO builds without the `gui_api` module (such as 2026.1.224) can't open the plugin window. Use `plugin/single_older.py` instead. It runs the same export steps, but you enter the settings in the file itself.
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) first.
-2. Drag `plugin/easy_export_older_versions.py` into the CLO 3D window. CLO opens it in its own script editor.
+2. Drag `plugin/single_older.py` into the CLO 3D window. CLO opens it in its own script editor.
 3. In CLO's script editor, edit the block at the top:
    - `OUTPUT_DIR`: the output folder, as an absolute path. It is created if it doesn't exist.
    - `FILE_NAME`: leave it empty to use the project name.

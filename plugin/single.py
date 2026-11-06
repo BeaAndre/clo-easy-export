@@ -1,6 +1,6 @@
 """Easy Export: quad mesh, particle distance 15, Texture topstitches, FBX, PBR bakes, topstitch mask.
 
-Run from Plugins > Easy Export > easy_export. Opens a tool window: paste the output folder,
+Run from Plugins > Easy Export > single. Opens a tool window: paste the output folder,
 press Run. UVs must already be arranged in the UV editor (0-1 tile).
 """
 import importlib
@@ -83,8 +83,7 @@ def build_ui():
     ui["path"] = gui_api.AddTextInput(win, settings.get("output_dir", ""), "D:\\exports\\my_garment")
     gui_api.AddLabel(win, "File name (leave empty to use the project name):")
     ui["name"] = gui_api.AddTextInput(win, "", project_name)
-    gui_api.AddLabel(win, "Particle distance (values under %g can cause performance issues):"
-                     % steps.RECOMMENDED_MIN_DISTANCE)
+    gui_api.AddLabel(win, common.DISTANCE_LABEL)
     saved = common.saved_particle_distance(settings)
     ui["distance"] = gui_api.AddTextInput(win, "%g" % saved, "%g" % steps.PARTICLE_DISTANCE)
     ui["run"] = gui_api.AddButton(win, "Run", on_run)
