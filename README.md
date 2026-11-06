@@ -1,11 +1,12 @@
 # CLO Easy Export
 
-A CLO 3D plugin that prepares a garment for real-time use and exports it with one click. It exports an FBX mesh and baked PBR textures, plus a topstitch mask. It can also export a whole folder of projects with the same settings.
+A CLO 3D plugin that prepares a garment for real-time use and exports it with one click. It exports an FBX mesh and baked PBR textures, plus a topstitch mask.
+It can also export an entire folder of projects with the same settings (batch).
 
 ## What it does
 
-1. Sets all patterns to the **Quad** mesh type.
-2. Sets the **particle distance** of all patterns (default 15).
+1. Sets all patterns' mesh type to **Quad**.
+2. Sets the **Particle Distance** of all patterns (default 15).
 3. Sets all topstitch styles to **Texture**.
 4. Exports an **FBX**: garment only (no avatar), single object, thick, unified UVs, current colorway.
 5. Bakes **Diffuse, Normal and Roughness** maps (4096 px).
@@ -26,10 +27,10 @@ Output:
 
 ## Requirements
 
-- Windows.
+- Windows
 - CLO 3D with Python plug-in support:
-  - **CLO 2026.1.336 or newer:** use `single`, or `batch` for a whole folder. Both open a window for the settings. They need CLO's `gui_api` module, which older builds don't have.
-  - **Older CLO builds** (tested on 2026.1.224): use `single_older`. See [Older CLO versions](#older-clo-versions). Batch export isn't available for these builds.
+  - **CLO 2026.1.336 or newer:** use `single`, or `batch` (for a whole folder). Both open a settings window. They need CLO's `gui_api` module, which older builds don't have.
+  - **Older CLO builds** (tested on 2026.1.224): use `single_older`. See [Older CLO versions](#older-clo-versions). Batch export is not yet available for these builds.
 
 ## Installation
 
@@ -48,11 +49,11 @@ Output:
    ```
 
 4. Start CLO. The plugin appears under **Plugins → Easy Export**, with three entries:
-   - `single` for one project, on CLO 2026.1.336 or newer.
-   - `batch` for a folder of projects, on CLO 2026.1.336 or newer.
-   - `single_older` for older CLO builds.
+   - `single` for one project.
+   - `batch` for a folder of projects.
+   - `single_older` for CLO builds older than 2026.1.336.
 
-## Usage
+## Single file export
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) first.
 2. Open **Plugins → Easy Export → single**.
@@ -69,10 +70,10 @@ Output:
 `batch` runs the same export on every `.zprj` file in a folder, using one set of settings. Subfolders aren't searched.
 
 1. **Arrange the UVs in the UV Editor** (0–1 tile) in every project and save them. The batch can't stop to fix them.
-2. Save the project that's open in CLO. The batch closes it without saving.
+2. Save the project that's open in CLO. The batch will close it without saving.
 3. Open **Plugins → Easy Export → batch**.
 4. Fill in the window's fields:
-   - The folder with your `.zprj` files.
+   - The input folder with your `.zprj` files.
    - The output folder.
    - A particle distance. 10 or higher is recommended.
 5. Press **Run**, check the summary and press **Continue**. Wait until the batch finishes. It can't be stopped from the window.
