@@ -51,10 +51,11 @@ class RunLog:
         self.lines.append(line)
         gui_api.SetWidgetValue(self.widget, "\n".join(self.lines))
 
-    def save(self, path):
+    def save(self, path, start=0):
+        """Write the log to path, from line number start onwards."""
         try:
             with open(path, "w", encoding="utf-8") as f:
-                f.write("\n".join(self.lines) + "\n")
+                f.write("\n".join(self.lines[start:]) + "\n")
         except OSError:
             pass
 

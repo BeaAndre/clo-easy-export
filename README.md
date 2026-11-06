@@ -1,6 +1,6 @@
 # CLO Easy Export
 
-A CLO 3D plugin that prepares a garment for real-time use and exports it with one click. It exports an FBX mesh and baked PBR textures, plus a topstitch mask.
+A CLO 3D plugin that prepares a garment for real-time use and exports it with one click. It exports an FBX mesh and baked PBR textures, plus a topstitch mask. It can also export a whole folder of projects with the same settings.
 
 ## What it does
 
@@ -28,8 +28,8 @@ Output:
 
 - Windows.
 - CLO 3D with Python plug-in support:
-  - **CLO 2026.1.336 or newer:** use `easy_export`, which opens a window for the settings. It needs CLO's `gui_api` module, which older builds don't have.
-  - **Older CLO builds** (tested on 2026.1.224): use `easy_export_older_versions`. See [Older CLO versions](#older-clo-versions).
+  - **CLO 2026.1.336 or newer:** use `easy_export`, or `easy_export_batch` for a whole folder. Both open a window for the settings. They need CLO's `gui_api` module, which older builds don't have.
+  - **Older CLO builds** (tested on 2026.1.224): use `easy_export_older_versions`. See [Older CLO versions](#older-clo-versions). Batch export isn't available for these builds.
 
 ## Installation
 
@@ -47,8 +47,9 @@ Output:
    }
    ```
 
-4. Start CLO. The plugin appears under **Plugins → Easy Export**, with two entries:
-   - `easy_export` for CLO 2026.1.336 or newer.
+4. Start CLO. The plugin appears under **Plugins → Easy Export**, with three entries:
+   - `easy_export` for one project, on CLO 2026.1.336 or newer.
+   - `easy_export_batch` for a folder of projects, on CLO 2026.1.336 or newer.
    - `easy_export_older_versions` for older CLO builds.
 
 ## Usage
@@ -62,6 +63,36 @@ Output:
 4. Press **Run**, check the summary and press **Continue**. Wait until the plugin finishes.
 
 > **Note:** Steps 1–3 permanently change the project's mesh type, particle distance and topstitch settings. Save a copy of your project first if you want to keep the original.
+
+## Batch export
+
+`easy_export_batch` runs the same export on every `.zprj` file in a folder, using one set of settings. Subfolders aren't searched.
+
+1. **Arrange the UVs in the UV Editor** (0–1 tile) in every project and save them. The batch can't stop to fix them.
+2. Save the project that's open in CLO. The batch closes it without saving.
+3. Open **Plugins → Easy Export → easy_export_batch**.
+4. Fill in the window's fields:
+   - The folder with your `.zprj` files.
+   - The output folder.
+   - A particle distance. 10 or higher is recommended.
+5. Press **Run**, check the summary and press **Continue**. Wait until the batch finishes. It can't be stopped from the window.
+
+Each project is exported to its own subfolder, named after the `.zprj` file:
+
+```
+<output folder>/
+├── batch_export_log.txt
+├── <project>/
+│   ├── <project>.fbx
+│   ├── <project>_export_log.txt
+│   └── textures/
+└── <another project>/
+```
+
+- **Your project files:** the `.zprj` files are never saved, so the changes made for the export don't stay in them.
+- **After the batch:** CLO is left with a new, empty project.
+- **Failed projects:** if a project fails, the batch logs the error and continues with the next one. The final summary lists any failures.
+- **Running it again:** projects that are already fully exported are skipped, so a rerun only does what's missing. To export a project again, for example with a new particle distance, delete its subfolder first.
 
 ## Older CLO versions
 
