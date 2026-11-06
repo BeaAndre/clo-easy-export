@@ -1,7 +1,6 @@
-"""Window helpers shared by the windowed scripts. Needs gui_api, so the no-GUI script must not import this."""
+"""Window helpers shared by the windowed scripts. Needs gui_api, so the no-GUI scripts must not import this."""
 import json
 import os
-import time
 
 import gui_api
 
@@ -40,26 +39,9 @@ def saved_particle_distance(settings):
     return saved
 
 
-class RunLog:
-    """Timestamps each line, shows it in a text area widget and prints it to the console."""
-
-    def __init__(self, widget):
-        self.widget = widget
-        self.lines = []
-
-    def __call__(self, msg):
-        line = "%s  %s" % (time.strftime("%H:%M:%S"), msg)
-        print(line)
-        self.lines.append(line)
-        gui_api.SetWidgetValue(self.widget, "\n".join(self.lines))
-
-    def save(self, path, start=0):
-        """Write the log to path, from line number start onwards."""
-        try:
-            with open(path, "w", encoding="utf-8") as f:
-                f.write("\n".join(self.lines[start:]) + "\n")
-        except OSError:
-            pass
+def window_log(widget):
+    """A steps.RunLog that also shows its lines in a text area widget."""
+    return steps.RunLog(lambda lines: gui_api.SetWidgetValue(widget, "\n".join(lines)))
 
 
 def validate_output_dir(raw):

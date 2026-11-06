@@ -30,6 +30,29 @@ class PipelineError(Exception):
     pass
 
 
+class RunLog:
+    """Timestamps each line and prints it to the console. on_change(lines) runs after every new line."""
+
+    def __init__(self, on_change=None):
+        self.on_change = on_change
+        self.lines = []
+
+    def __call__(self, msg):
+        line = "%s  %s" % (time.strftime("%H:%M:%S"), msg)
+        print(line)
+        self.lines.append(line)
+        if self.on_change:
+            self.on_change(self.lines)
+
+    def save(self, path, start=0):
+        """Write the log to path, from line number start onwards."""
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("\n".join(self.lines[start:]) + "\n")
+        except OSError:
+            pass
+
+
 def texture_size():
     """4096 unless <repo>/dev_settings.json says {"texture_size": N} (dev/testing only)."""
     try:

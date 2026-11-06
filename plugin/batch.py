@@ -7,18 +7,15 @@ UVs must already be arranged in the UV editor (0-1 tile) in every project.
 import importlib
 import os
 import sys
-import time
 import traceback
 
-import ApiTypes
 import gui_api
-import import_api
-import utility_api
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
+import pipeline_lib.batch_core  # noqa: E402
 import pipeline_lib.gui_common  # noqa: E402
 import pipeline_lib.png_flatten  # noqa: E402
 import pipeline_lib.steps  # noqa: E402
@@ -26,12 +23,13 @@ import pipeline_lib.steps  # noqa: E402
 # CLO keeps the interpreter alive between runs: reload so edits are picked up without restarting CLO.
 importlib.reload(pipeline_lib.png_flatten)
 importlib.reload(pipeline_lib.steps)
+importlib.reload(pipeline_lib.batch_core)
 importlib.reload(pipeline_lib.gui_common)
 steps = pipeline_lib.steps
+core = pipeline_lib.batch_core
 common = pipeline_lib.gui_common
 
 TITLE = common.TITLE + " Batch"
-BATCH_LOG_NAME = "batch_export_log.txt"
 ui = {}
 
 
@@ -47,75 +45,8 @@ def validate_input_dir(raw):
     return folder
 
 
-def find_projects(folder):
-    """{export name: .zprj path} for the .zprj files directly inside folder. Subfolders are not searched."""
-    paths = [os.path.join(folder, n) for n in sorted(os.listdir(folder), key=str.lower)
-             if n.lower().endswith(".zprj")]
-    projects = {}
-    duplicates = []
-    for path in paths:
-        name = steps.base_name(os.path.basename(path))
-        if name in projects:
-            duplicates.append(os.path.basename(path))
-        projects[name] = path
-    return projects, duplicates
-
-
-def is_exported(out_dir, name):
-    return all(os.path.exists(p) for p in steps.output_files(os.path.join(out_dir, name), name))
-
-
-def open_project(path):
-    """Replace the open project, discarding its changes without asking. ImportFile would show a dialog."""
-    option = ApiTypes.ImportZPRJOption()
-    option.bAppend = False
-    option.bLoadGarment = True
-    option.bLoadAvatar = True
-    option.bLoadSceneAndProps = True
-    option.bLoadRenderProperties = True
-    if not import_api.ImportZprj(path, option):
-        # The previous project is still open: exporting now would write the wrong garment under this name.
-        raise steps.PipelineError("could not open %s" % path)
-
-
-def export_project(path, out_dir, name, distance, log, file_progress):
-    open_project(path)
-    project_dir = os.path.join(out_dir, name)
-    os.makedirs(project_dir, exist_ok=True)
-    steps.run_pipeline(project_dir, name, distance, log, file_progress)
-
-
-def run_batch(projects, out_dir, distance, log):
-    """Export each project. One failure doesn't stop the others. Returns (exported, failed, skipped) name lists."""
-    exported, failed, skipped = [], [], []
-    batch_log = os.path.join(out_dir, BATCH_LOG_NAME)
-    for i, (name, path) in enumerate(projects.items()):
-        log("--- %d/%d %s" % (i + 1, len(projects), os.path.basename(path)))
-        if is_exported(out_dir, name):
-            log("Skipped: already exported")
-            skipped.append(name)
-        else:
-            def file_progress(pct, done=i):
-                progress((done + pct / 100.0) * 100.0 / len(projects))
-
-            first_line = len(log.lines) - 1
-            try:
-                export_project(path, out_dir, name, distance, log, file_progress)
-                exported.append(name)
-            except Exception as e:  # noqa: BLE001
-                log("FAILED: %s" % e)
-                log(traceback.format_exc())
-                failed.append(name)
-            project_dir = os.path.join(out_dir, name)
-            if os.path.isdir(project_dir):
-                log.save(os.path.join(project_dir, name + "_export_log.txt"), first_line)
-        progress((i + 1) * 100.0 / len(projects))
-        log.save(batch_log)  # after every project, so a crash still leaves a log
-    return exported, failed, skipped
-
-
 def confirm_run(projects, in_dir, out_dir, distance):
-    skipping = sum(is_exported(out_dir, name) for name in projects)
+    skipping = sum(core.is_exported(out_dir, name) for name in projects)
     msg = ("%s\nEvery project must be ready: the batch can't stop to fix UVs.\n\nExport %d projects from:\n%s\n\nto "
            "one subfolder each in:\n%s\n\nEach export uses quads, particle distance %g and Texture topstitches.\n"
            "Texture size: %d px. The .zprj files are not saved."
@@ -125,9 +56,8 @@ def confirm_run(projects, in_dir, out_dir, distance):
     if skipping:
         msg += ("\n\n%d already exported and will be skipped. To export one again, delete its subfolder first."
                 % skipping)
-    msg += "\n\nThe project open now will be closed WITHOUT saving."
-    if utility_api.CheckZPRJForUnsavedChanges():
-        msg += "\nWARNING: it has unsaved changes, which will be lost. Cancel and save it first if you need them."
+    if skipping < len(projects):
+        msg += "\n\nThe project open now will be closed WITHOUT saving. Cancel and save it first if you need to."
     msg += "\n\nOnce you press 'Continue', please wait until the batch fully finishes running."
     return gui_api.AskConfirm(TITLE, msg, "Continue", "Cancel")
 
@@ -136,7 +66,7 @@ def on_run():
     in_dir = validate_input_dir(gui_api.GetWidgetValue(ui["input"]))
     if not in_dir:
         return
-    projects, duplicates = find_projects(in_dir)
+    projects, duplicates = core.find_projects(in_dir)
     if not projects:
         gui_api.AskConfirm(TITLE, "No .zprj files in:\n%s" % in_dir, "OK", "Close")
         return
@@ -154,28 +84,19 @@ def on_run():
         return
 
     common.save_settings(input_dir=in_dir, output_dir=out_dir, particle_distance=distance)
-    log = common.RunLog(ui["log"])
+    log = common.window_log(ui["log"])
     gui_api.SetWidgetEnabled(ui["run"], False)
     progress(0)
-    t0 = time.time()
-    exported, failed, skipped = [], [], []
     try:
-        log("Batch: %d projects from %s -> %s" % (len(projects), in_dir, out_dir))
-        exported, failed, skipped = run_batch(projects, out_dir, distance, log)
-        summary = "%d exported, %d failed, %d skipped" % (len(exported), len(failed), len(skipped))
-        if failed:
-            summary += "\n\nFailed:\n" + "\n".join(failed)
-        log("Batch finished in %.1fs: %s" % (time.time() - t0, summary))
+        result = core.summary(*core.run_batch(projects, in_dir, out_dir, distance, log, progress))
     except Exception as e:  # noqa: BLE001
-        summary = "Batch stopped: %s" % e
+        result = "Batch stopped: %s" % e
         log("FAILED: %s" % e)
         log(traceback.format_exc())
+        log.save(os.path.join(out_dir, core.BATCH_LOG_NAME))
     finally:
-        # The last project has changes that shouldn't be saved over its .zprj by accident.
-        utility_api.NewProject()
-        log.save(os.path.join(out_dir, BATCH_LOG_NAME))
         gui_api.SetWidgetEnabled(ui["run"], True)
-    gui_api.AskConfirm(TITLE, "%s\n\nLog: %s" % (summary, os.path.join(out_dir, BATCH_LOG_NAME)), "OK", "Close")
+    gui_api.AskConfirm(TITLE, "%s\n\nLog: %s" % (result, os.path.join(out_dir, core.BATCH_LOG_NAME)), "OK", "Close")
 
 
 def build_ui():

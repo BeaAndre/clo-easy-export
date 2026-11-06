@@ -57,7 +57,7 @@ def on_run():
         return
 
     common.save_settings(output_dir=out_dir, particle_distance=distance)
-    log = common.RunLog(ui["log"])
+    log = common.window_log(ui["log"])
     gui_api.SetWidgetEnabled(ui["run"], False)
     progress(0)
     ok = False
