@@ -141,10 +141,10 @@ def patterns_outside_uv_tile():
 def fit_uvs_to_tile():
     """If any pattern is outside the 0-1 tile, reset the UVs to the 2D arrangement and pack them all into it.
     The reset undoes scaling done in the UV editor, so one oversized island can't shrink the others.
-    If everything fits, the UVs are left alone."""
+    If everything fits, the UVs are left alone. Returns (message, whether the UVs were packed)."""
     outside = patterns_outside_uv_tile()
     if not outside:
-        return "all patterns inside 0-1, UVs left as they are"
+        return "all patterns inside 0-1, UVs left as they are", False
     utility_api.ResetUVTo2DArrangement()
     packed = utility_api.UVPacking(True, UV_FIX_SCALE_RATIO, UV_ADVANCED_SEARCH, UV_PADDING, UV_FIDELITY, UV_ROTATIONS)
     if not packed:
@@ -152,7 +152,15 @@ def fit_uvs_to_tile():
     still_outside = patterns_outside_uv_tile()
     if still_outside:
         raise PipelineError("patterns %s are still outside 0-1 after packing" % still_outside)
-    return "%d of %d patterns were outside 0-1, all UVs reset and packed" % (len(outside), pattern_api.GetPatternCount())
+    count = pattern_api.GetPatternCount()
+    return "%d of %d patterns were outside 0-1, all UVs reset and packed" % (len(outside), count), True
+
+
+def save_project(path):
+    """Save the open project over path. No thumbnail: that would add a .png next to the .zprj."""
+    if not export_api.ExportZPrj(path, False):
+        raise PipelineError("could not save the new UVs to %s" % path)
+    return "new UVs saved to " + path
 
 
 # -------------------------------------------------------------------------------------- step 4
@@ -304,22 +312,28 @@ def bake_topstitch_mask(tex_dir, name):
 
 
 # ---------------------------------------------------------------------------------- whole export
-def run_pipeline(out_dir, name, distance, log, progress=lambda pct: None, auto_uv=False):
+def run_pipeline(out_dir, name, distance, log, progress=lambda pct: None, auto_uv=False, save_uvs_to=None):
     """Run steps 1-6 on the open project. log(msg) gets one line per step, progress(pct) gets 0-100.
-    With auto_uv, UVs that don't fit the 0-1 tile are packed before the FBX export.
+    With auto_uv, UVs that don't fit the 0-1 tile are packed first. With save_uvs_to as well, a packed project
+    is saved there before the export steps change it, so the file gets the new UVs and nothing else.
     Failures raise: the calling script decides how to report them."""
     tex_dir = os.path.join(out_dir, TEXTURES_FOLDER)
     os.makedirs(tex_dir, exist_ok=True)
     t0 = time.time()
     log("Export '%s' -> %s (texture size %d, particle distance %g)" % (name, out_dir, texture_size(), distance))
+    if auto_uv:
+        message, packed = fit_uvs_to_tile()
+        log("    Auto-UV: " + message)
+        if packed and save_uvs_to:
+            log("    Auto-UV: " + save_project(save_uvs_to))
     log("1/6 " + set_quad_mesh())
     progress(8)
     log("2/6 " + set_particle_distance(distance))
     progress(15)
     log("3/6 " + set_topstitches_texture())
     progress(22)
-    if auto_uv:
-        log("    Auto-UV: " + fit_uvs_to_tile())
+    if auto_uv and fit_uvs_to_tile()[1]:  # in case the mesh steps moved anything
+        log("    Auto-UV: patterns moved outside 0-1 during the mesh steps, UVs packed again (not saved)")
     log("4/6 FBX: " + export_fbx(out_dir, name))
     progress(40)
     for p in bake_pbr(tex_dir, name):

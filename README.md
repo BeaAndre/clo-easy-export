@@ -81,6 +81,7 @@ Output:
    - The output folder.
    - A particle distance. 10 or higher is recommended.
    - **Auto-UV to 0-1 before exporting**, if you want it. See [Auto-UV](#auto-uv).
+   - **Save auto-UVs**, if you want Auto-UV's result kept in your projects. See [Keeping the new UVs](#keeping-the-new-uvs).
 5. Press **Run**, check the summary and press **Continue**. Wait until the batch finishes. It can't be stopped from the window.
 
 Each project is exported to its own subfolder, named after the `.zprj` file:
@@ -95,7 +96,7 @@ Each project is exported to its own subfolder, named after the `.zprj` file:
 └── <another project>/
 ```
 
-- **Your project files:** the `.zprj` files are never saved, so the changes made for the export don't stay in them.
+- **Your project files:** the `.zprj` files aren't saved, so the changes made for the export don't stay in them. The one exception is the optional [Keeping the new UVs](#keeping-the-new-uvs).
 - **After the batch:** the last project stays open, with the export changes in it. Don't save it, or those changes go into its `.zprj`. If every project was skipped, the project you had open stays as it was.
 - **The project you have open:** the batch always exports the saved `.zprj` files, so unsaved changes aren't included, even if that project is in the input folder.
 - **Failed projects:** if a project fails, the batch logs the error and continues with the next one. The final summary lists any failures.
@@ -115,9 +116,22 @@ Good to know:
 - **Buttons, zippers and trims:** the check can't see them. If only a button is outside the tile, nothing gets packed, so check those yourself.
 - **Overlaps:** the check only looks at the tile's edges. Overlapping patterns inside 0–1 aren't detected.
 - **Hand-scaled UVs:** the reset undoes any scaling you did in the UV editor, so every pattern goes back to its true proportions. If you made a pattern bigger on purpose for more texture detail, arrange the UVs yourself and leave Auto-UV off.
-- **Your project:** in `1_single`, the new UV layout stays in the open project, so it's kept if you save. `2_batch` never saves the `.zprj` files.
+- **Your project:** in `1_single`, the new UV layout stays in the open project, so it's kept if you save. Saving also keeps the other export changes.
 
 Auto-UV isn't available in `3_older_single` and `4_older_batch` yet.
+
+### Keeping the new UVs
+
+`2_batch` also has a **Save auto-UVs** checkbox, which only works with Auto-UV ticked. It's off by default, and the window remembers your last choice.
+
+When it's on, a project that gets packed is saved right after packing, before the mesh and topstitch changes, so its `.zprj` gets the new UVs and nothing else. On the next run everything fits, so the UVs aren't packed again.
+
+- **Can't be undone:** the `.zprj` is overwritten, so the old UV layout is gone, including any scaling you did by hand. Keep a backup if you might need it.
+- **Projects that aren't packed:** if a project already fits, or was skipped because it's already exported, its file isn't touched.
+- **If the export fails afterwards:** the new UVs stay saved. Run the batch again and the UVs are left as they are.
+- **Older CLO builds:** saving can update a project to your CLO version, so an older build may not be able to open it.
+
+This isn't in `1_single`, because saving there would also write any unsaved edits in the open project.
 
 ## Older CLO versions
 

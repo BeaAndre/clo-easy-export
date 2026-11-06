@@ -1,7 +1,8 @@
 """Easy Export Batch: run the Easy Export steps on every .zprj in a folder.
 
 Run from Plugins > Easy Export > 2_batch. Each project is exported to its own subfolder of
-the output folder, named after the .zprj file. The .zprj files are never saved, so they stay unchanged.
+the output folder, named after the .zprj file. The .zprj files stay unchanged, unless Auto-UV packs a project
+and the option to save the new UVs is on: then that file gets the new UVs, and nothing else.
 UVs must already be arranged in the UV editor (0-1 tile) in every project.
 """
 import importlib
@@ -30,6 +31,8 @@ core = pipeline_lib.batch_core
 common = pipeline_lib.gui_common
 
 TITLE = common.TITLE + " Batch"
+SAVE_UVS_LABEL = "Save auto-UVs (only if auto-UV is ticked)"
+SAVE_UVS_NOTICE = "Auto-UVs will OVERWRITE any projects that don't already have packed UVs."
 ui = {}
 
 
@@ -45,14 +48,15 @@ def validate_input_dir(raw):
     return folder
 
 
-def confirm_run(projects, in_dir, out_dir, distance, auto_uv):
+def confirm_run(projects, in_dir, out_dir, distance, auto_uv, save_uvs):
     skipping = sum(core.is_exported(out_dir, name) for name in projects)
     uv_text = (common.AUTO_UV_NOTICE if auto_uv
                else common.UV_WARNING + "\nEvery project must be ready: the batch can't stop to fix UVs.")
     msg = ("%s\n\nExport %d projects from:\n%s\n\nto one subfolder each in:\n%s\n\n"
            "Each export uses quads, particle distance %g and Texture topstitches.\n"
-           "Texture size: %d px. The .zprj files are not saved."
-           % (uv_text, len(projects), in_dir, out_dir, distance, steps.texture_size()))
+           "Texture size: %d px.\n\n%s"
+           % (uv_text, len(projects), in_dir, out_dir, distance, steps.texture_size(),
+              SAVE_UVS_NOTICE if save_uvs else "The .zprj files are not saved."))
     if distance < steps.RECOMMENDED_MIN_DISTANCE:
         msg += "\n\nWARNING: particle distance below %g can cause performance issues." % steps.RECOMMENDED_MIN_DISTANCE
     if skipping:
@@ -83,15 +87,18 @@ def on_run():
     if distance is None:
         return
     auto_uv = common.is_checked(ui["auto_uv"])
-    if not confirm_run(projects, in_dir, out_dir, distance, auto_uv):
+    save_uvs = auto_uv and common.is_checked(ui["save_uvs"])
+    if not confirm_run(projects, in_dir, out_dir, distance, auto_uv, save_uvs):
         return
 
-    common.save_settings(input_dir=in_dir, output_dir=out_dir, particle_distance=distance, auto_uv=auto_uv)
+    common.save_settings(input_dir=in_dir, output_dir=out_dir, particle_distance=distance, auto_uv=auto_uv,
+                         save_uvs=common.is_checked(ui["save_uvs"]))
     log = common.window_log(ui["log"])
     gui_api.SetWidgetEnabled(ui["run"], False)
     progress(0)
     try:
-        result = core.summary(*core.run_batch(projects, in_dir, out_dir, distance, log, progress, auto_uv))
+        result = core.summary(*core.run_batch(projects, in_dir, out_dir, distance, log, progress, auto_uv,
+                                             save_uvs))
     except Exception as e:  # noqa: BLE001
         result = "Batch stopped: %s" % e
         log("FAILED: %s" % e)
@@ -114,6 +121,7 @@ def build_ui():
     saved = common.saved_particle_distance(settings)
     ui["distance"] = gui_api.AddTextInput(win, "%g" % saved, "%g" % steps.PARTICLE_DISTANCE)
     ui["auto_uv"] = gui_api.AddCheckBox(win, common.AUTO_UV_LABEL, common.saved_auto_uv(settings))
+    ui["save_uvs"] = gui_api.AddCheckBox(win, SAVE_UVS_LABEL, settings.get("save_uvs") is True)
     ui["run"] = gui_api.AddButton(win, "Run", on_run)
     ui["progress"] = gui_api.AddProgressBar(win, 0)
     ui["log"] = gui_api.AddTextArea(win, "", True)

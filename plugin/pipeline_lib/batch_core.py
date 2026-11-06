@@ -43,8 +43,10 @@ def open_project(path):
         raise steps.PipelineError("could not open %s" % path)
 
 
-def run_batch(projects, in_dir, out_dir, distance, log, progress=lambda pct: None, auto_uv=False):
+def run_batch(projects, in_dir, out_dir, distance, log, progress=lambda pct: None, auto_uv=False,
+              save_uvs=False):
     """Export each project with a steps.RunLog as log. One failure doesn't stop the others.
+    With save_uvs, a project that Auto-UV packed is saved over its .zprj, with no other changes.
     Returns (exported, failed, skipped) name lists."""
     t0 = time.time()
     exported, failed, skipped = [], [], []
@@ -65,7 +67,8 @@ def run_batch(projects, in_dir, out_dir, distance, log, progress=lambda pct: Non
                 try:
                     open_project(path)
                     os.makedirs(project_dir, exist_ok=True)
-                    steps.run_pipeline(project_dir, name, distance, log, file_progress, auto_uv)
+                    steps.run_pipeline(project_dir, name, distance, log, file_progress, auto_uv,
+                                       path if save_uvs else None)
                     exported.append(name)
                 except Exception as e:  # noqa: BLE001
                     log("FAILED: %s" % e)
