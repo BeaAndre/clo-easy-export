@@ -104,7 +104,7 @@ Each project is exported to its own subfolder, named after the `.zprj` file:
 
 ## Auto-UV
 
-`1_single` and `2_batch` have an **Auto-UV to 0-1 before exporting** checkbox. It's off by default, and the window remembers your last choice.
+`1_single` and `2_batch` have an **Auto-UV to 0-1 before exporting** checkbox. It's off by default, and the window remembers your last choice. In `3_older_single` and `4_older_batch`, set `AUTO_UV = True` instead. See [Older CLO versions](#older-clo-versions).
 
 When it's on, the plugin checks whether every pattern fits inside the 0–1 tile:
 
@@ -116,13 +116,11 @@ Good to know:
 - **Buttons, zippers and trims:** the check can't see them. If only a button is outside the tile, nothing gets packed, so check those yourself.
 - **Overlaps:** the check only looks at the tile's edges. Overlapping patterns inside 0–1 aren't detected.
 - **Hand-scaled UVs:** the reset undoes any scaling you did in the UV editor, so every pattern goes back to its true proportions. If you made a pattern bigger on purpose for more texture detail, arrange the UVs yourself and leave Auto-UV off.
-- **Your project:** in `1_single`, the new UV layout stays in the open project, so it's kept if you save. Saving also keeps the other export changes.
-
-Auto-UV isn't available in `3_older_single` and `4_older_batch` yet.
+- **Your project:** in `1_single` and `3_older_single`, the new UV layout stays in the open project, so it's kept if you save. Saving also keeps the other export changes.
 
 ### Keeping the new UVs
 
-`2_batch` also has a **Save auto-UVs** checkbox, which only works with Auto-UV ticked. It's off by default, and the window remembers your last choice.
+`2_batch` also has a **Save auto-UVs** checkbox, which only works with Auto-UV ticked. It's off by default, and the window remembers your last choice. In `4_older_batch`, set `SAVE_AUTO_UVS = True` together with `AUTO_UV = True`.
 
 When it's on, a project that gets packed is saved right after packing, before the mesh and topstitch changes, so its `.zprj` gets the new UVs and nothing else. On the next run everything fits, so the UVs aren't packed again.
 
@@ -131,7 +129,7 @@ When it's on, a project that gets packed is saved right after packing, before th
 - **If the export fails afterwards:** the new UVs stay saved. Run the batch again and the UVs are left as they are.
 - **Older CLO builds:** saving can update a project to your CLO version, so an older build may not be able to open it.
 
-This isn't in `1_single`, because saving there would also write any unsaved edits in the open project.
+This isn't in `1_single` or `3_older_single`, because saving there would also write any unsaved edits in the open project.
 
 ## Older CLO versions
 
@@ -139,12 +137,13 @@ CLO builds without the `gui_api` module (such as 2026.1.224) can't open the plug
 
 ### Single file export on older versions
 
-1. **Arrange the UVs in the UV Editor** (0–1 tile) first.
+1. **Arrange the UVs in the UV Editor** (0–1 tile) first, or use `AUTO_UV`.
 2. Drag `plugin/3_older_single.py` into the CLO 3D window. CLO opens it in its own script editor.
 3. In CLO's script editor, edit the block at the top:
    - `OUTPUT_DIR`: the output folder, as an absolute path. It is created if it doesn't exist.
    - `FILE_NAME`: leave it empty to use the project name.
    - `PARTICLE_DISTANCE`: 10 or higher is recommended.
+   - `AUTO_UV`: `True` to pack the UVs into 0–1 first if any pattern is outside. See [Auto-UV](#auto-uv). Default `False`.
    - `PLUGIN_DIR`: the `plugin` folder of this repository. The default matches the ZIP download unpacked into the CLO `Plugins` folder.
 4. Run the script from CLO's script editor.
 5. Check `<output folder>/<name>_export_log.txt` for the result. The script doesn't show a message when it finishes.
@@ -160,6 +159,8 @@ CLO builds without the `gui_api` module (such as 2026.1.224) can't open the plug
    - `INPUT_DIR`: the folder with your `.zprj` files, as an absolute path.
    - `OUTPUT_DIR`: the output folder, as an absolute path. It is created if it doesn't exist.
    - `PARTICLE_DISTANCE`: 10 or higher is recommended.
+   - `AUTO_UV`: `True` to pack a project's UVs into 0–1 first if any pattern is outside. With this on, step 1 is optional. See [Auto-UV](#auto-uv). Default `False`.
+   - `SAVE_AUTO_UVS`: `True` to save packed UVs over the `.zprj`. Only works with `AUTO_UV = True`. See [Keeping the new UVs](#keeping-the-new-uvs). Default `False`.
    - `PLUGIN_DIR`: the `plugin` folder of this repository. The default matches the ZIP download unpacked into the CLO `Plugins` folder.
 5. Run the script from CLO's script editor. It can't be stopped once it has started.
 6. Check `<output folder>/batch_export_log.txt` for the result. The script doesn't show a message when it finishes.

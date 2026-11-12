@@ -2,6 +2,8 @@
 INPUT_DIR = r"D:\clo_projects\my_collection"   # absolute path of the folder with the .zprj files
 OUTPUT_DIR = r"D:\exports\my_collection"       # absolute path; created if missing
 PARTICLE_DISTANCE = 15.0                        # 10 or higher is recommended
+AUTO_UV = False                                 # True = if any pattern is outside 0-1, reset and pack all UVs first
+SAVE_AUTO_UVS = False                           # True = save packed UVs over the .zprj (only works with AUTO_UV)
 # Folder that contains pipeline_lib (used if this file's own folder can't be detected):
 PLUGIN_DIR = r"C:\Users\Public\Documents\CLO\Plugins\clo-easy-export-main\plugin"
 # ------------------------------------------------------------------------
@@ -12,15 +14,22 @@ PLUGIN_DIR = r"C:\Users\Public\Documents\CLO\Plugins\clo-easy-export-main\plugin
 # OUTPUT_DIR, named after the .zprj file. The settings are the plain variables above instead of a window.
 #
 # HOW TO USE
-#   1. Arrange the UVs in the UV Editor (0-1 tile) in every project and save them.
+#   1. Arrange the UVs in the UV Editor (0-1 tile) in every project and save them, or set AUTO_UV = True.
 #   2. Save the project that's open in CLO. It will be closed WITHOUT saving, and there is no warning.
 #   3. Drag this file into the CLO 3D window. CLO opens it in its own script editor.
-#   4. In that editor, edit INPUT_DIR, OUTPUT_DIR and PARTICLE_DISTANCE above.
+#   4. In that editor, edit INPUT_DIR, OUTPUT_DIR and PARTICLE_DISTANCE (and optionally AUTO_UV /
+#      SAVE_AUTO_UVS) above.
 #   5. Run it from CLO's script editor. There is no way to stop it once it has started.
 #   6. Check <OUTPUT_DIR>\batch_export_log.txt (or the Python console) for the result.
 #
-# The .zprj files are never saved. The last project stays open with the export changes, so don't save it
-# or they go into its .zprj. Projects that are already fully exported are skipped: to export
+# AUTO_UV: if any pattern in a project is outside the 0-1 tile, all its UVs are reset to the 2D arrangement
+# and packed into 0-1 before exporting. Projects where every pattern already fits are left alone.
+# Buttons outside 0-1 aren't detected.
+# SAVE_AUTO_UVS: a project that AUTO_UV packed is saved over its .zprj with the new UVs and nothing else.
+# This OVERWRITES those .zprj files. It does nothing unless AUTO_UV is True too.
+#
+# Otherwise the .zprj files are never saved. The last project stays open with the export changes, so don't
+# save it or they go into its .zprj. Projects that are already fully exported are skipped: to export
 # one again, delete its subfolder first.
 
 import importlib
@@ -96,10 +105,19 @@ def run():
 
     if distance < steps.RECOMMENDED_MIN_DISTANCE:
         log("WARNING: particle distance below %g can cause performance issues." % steps.RECOMMENDED_MIN_DISTANCE)
+    auto_uv = AUTO_UV is True
+    save_uvs = auto_uv and SAVE_AUTO_UVS is True
+    if auto_uv:
+        log("Auto-UV is on: if any pattern is outside 0-1, all UVs are reset and packed into 0-1.")
+    if save_uvs:
+        log("Save auto-UVs is on: packed projects are saved over their .zprj with the new UVs.")
+    elif SAVE_AUTO_UVS is True:
+        log("WARNING: SAVE_AUTO_UVS does nothing because AUTO_UV is off. The .zprj files are not saved.")
 
     os.makedirs(out_dir, exist_ok=True)
     try:
-        log(core.summary(*core.run_batch(projects, in_dir, out_dir, distance, log)))
+        log(core.summary(*core.run_batch(projects, in_dir, out_dir, distance, log, auto_uv=auto_uv,
+                                         save_uvs=save_uvs)))
     except Exception:  # noqa: BLE001
         log("FAILED:\n" + traceback.format_exc())
         log.save(os.path.join(out_dir, core.BATCH_LOG_NAME))

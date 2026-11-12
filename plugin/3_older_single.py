@@ -2,6 +2,7 @@
 OUTPUT_DIR = r"D:\exports\my_garment"   # absolute path; created if missing
 FILE_NAME = ""                           # empty = use the project name
 PARTICLE_DISTANCE = 15.0                 # 10 or higher is recommended
+AUTO_UV = False                          # True = if any pattern is outside 0-1, reset and pack all UVs first
 # Folder that contains pipeline_lib (used if this file's own folder can't be detected):
 PLUGIN_DIR = r"C:\Users\Public\Documents\CLO\Plugins\clo-easy-export-main\plugin"
 # ------------------------------------------------------------------------
@@ -12,14 +13,18 @@ PLUGIN_DIR = r"C:\Users\Public\Documents\CLO\Plugins\clo-easy-export-main\plugin
 # PBR bakes, topstitch mask), but the settings are the plain variables above instead of a window.
 #
 # HOW TO USE
-#   1. Arrange the UVs in the UV Editor (0-1 tile) first.
+#   1. Arrange the UVs in the UV Editor (0-1 tile) first, or set AUTO_UV = True.
 #   2. Drag this file into the CLO 3D window. CLO opens it in its own script editor.
-#   3. In that editor, edit OUTPUT_DIR (and optionally FILE_NAME / PARTICLE_DISTANCE) above.
+#   3. In that editor, edit OUTPUT_DIR (and optionally FILE_NAME / PARTICLE_DISTANCE / AUTO_UV) above.
 #   4. Run it from CLO's script editor.
 #   5. Check <OUTPUT_DIR>\<name>_export_log.txt (or the Python console) for the result.
 #
+# AUTO_UV: if any pattern is outside the 0-1 tile, all UVs are reset to the 2D arrangement and packed
+# into 0-1 before exporting. This replaces the project's UV layout, including any scaling done by hand.
+# If every pattern already fits, the UVs are left alone. Buttons outside 0-1 aren't detected.
+#
 # WARNING: this permanently changes the project's mesh type, particle distance and topstitch
-# settings. Save a copy of your project first.
+# settings (and the UV layout, if AUTO_UV packs it). Save a copy of your project first.
 
 import importlib
 import os
@@ -80,12 +85,16 @@ def run():
     if distance < steps.RECOMMENDED_MIN_DISTANCE:
         log("WARNING: particle distance below %g can cause performance issues." % steps.RECOMMENDED_MIN_DISTANCE)
 
+    auto_uv = AUTO_UV is True
+    if auto_uv:
+        log("Auto-UV is on: if any pattern is outside 0-1, all UVs are reset and packed into 0-1.")
+
     os.makedirs(out_dir, exist_ok=True)
     name = steps.base_name(FILE_NAME)
 
     ok = False
     try:
-        steps.run_pipeline(out_dir, name, distance, log)
+        steps.run_pipeline(out_dir, name, distance, log, auto_uv=auto_uv)
         ok = True
     except Exception:  # noqa: BLE001
         log("FAILED:\n" + traceback.format_exc())
